@@ -28,7 +28,7 @@ def fit_SVGSA(adata, gene_dict, lr = 0.001, seed = 3, CUDA = False, epochs = 10,
     
     if z_dim_gs > 0 and not fixed:
 
-        vr = select_highest_variance_gs(adata.X, gene_dict, N_GS, adata.var_names,normalize= normalize)
+        vr = select_highest_variance_gs(adata.obsm["raw"], gene_dict, N_GS, adata.var_names,normalize= normalize)
         idxs = [np.intersect1d(np.array(adata.var_names), np.array(gene_dict[k]), return_indices=True)[1] for k in vr]
         mask = torch.zeros([adata.shape[1], N_GS])
         for i in range(len(idxs)):
