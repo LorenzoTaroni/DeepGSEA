@@ -175,15 +175,15 @@ class VAE(nn.Module):
 
         #pen = torch.sum(  torch.log(z_scale_gs) + torch.log(z_scale_uns)  +  0.5 * (  (z_scale_uns**2) + (z_loc_uns)**2  )  +   0.5 * (  (z_scale_gs**2) + (z_loc_gs)**2  )  -   1 )
 
-        totpen = 0
+        totpen = []
 
         for i in range(len(z_loc_gs[1,:])):
             for j in range(len(z_loc_uns[1,:])):
-                pen1 = torch.mean((  torch.log(z_scale_gs[:,i]) - torch.log(z_scale_uns[:,j])  )  +  (  (z_scale_uns[:,j]**2) + (z_loc_uns[:,j] - z_loc_gs[:,i])**2  ) / (  2 * z_scale_gs[:,i]**2  )   -   0.5)
-                pen2 = torch.mean((  torch.log(z_scale_uns[:,j]) - torch.log(z_scale_gs[:,i])  )  +  (  (z_scale_gs[:,i]**2) + (z_loc_gs[:,i] - z_loc_uns[:,j])**2  ) / (  2 * z_scale_uns[:,j]**2  )   -   0.5)
-                totpen += (pen1+pen2)/2
+                kl1 = torch.mean((  torch.log(z_scale_gs[:,i]) - torch.log(z_scale_uns[:,j])  )  +  (  (z_scale_uns[:,j]**2) + (z_loc_uns[:,j] - z_loc_gs[:,i])**2  ) / (  2 * z_scale_gs[:,i]**2  )   -   0.5)
+                kl2 = torch.mean((  torch.log(z_scale_uns[:,j]) - torch.log(z_scale_gs[:,i])  )  +  (  (z_scale_gs[:,i]**2) + (z_loc_gs[:,i] - z_loc_uns[:,j])**2  ) / (  2 * z_scale_uns[:,j]**2  )   -   0.5)
+                totpen.append((kl1+kl2)/2)
 
-        pen = torch.mean(totpen)
+        pen = torch.mean(torch.as_tensor(totpen))
 
         return pen
 
