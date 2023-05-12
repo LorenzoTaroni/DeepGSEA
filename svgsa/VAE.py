@@ -19,8 +19,11 @@ class VAE(nn.Module):
         self.idx_gs = mask.sum(dim=0) > 0
         mask = mask[:,self.idx_gs]
         # create the encoder and decoder networks
-        self.encoder_gs = Encoder_GSEA(mask.shape[1], z_dim_gs, hidden_dims_enc_gs, n_gs, mask, batch_size)
-        self.encoder_uns = Encoder(input_dim, z_dim_uns, hidden_dims_enc_uns)
+
+        if z_dim_gs > 0:
+            self.encoder_gs = Encoder_GSEA(mask.shape[1], z_dim_gs, hidden_dims_enc_gs, n_gs, mask, batch_size)
+        if z_dim_uns > 0:
+            self.encoder_uns = Encoder(input_dim, z_dim_uns, hidden_dims_enc_uns)
         
         self.decoder = Decoder(input_dim, z_dim_gs + z_dim_uns, hidden_dims_dec)
         
@@ -116,8 +119,11 @@ class VAE(nn.Module):
     # define the guide (i.e. variational distribution) q(z|x)
     def guide(self, x):
         # register PyTorch module `encoder_gs` and `encoder_uns` with Pyro
-        pyro.module("encoder_gs", self.encoder_gs)
-        pyro.module("encoder_uns", self.encoder_uns)
+
+        if self.z_dim_gs > 0:
+            pyro.module("encoder_gs", self.encoder_gs)
+        if self.z_dim_uns > 0:
+            pyro.module("encoder_uns", self.encoder_uns)
         
         # sample the latent code z
         with pyro.plate("data", x.shape[1]):
@@ -199,8 +205,11 @@ class VAE(nn.Module):
 
     # define a helper function for reconstructing cells
     def sample_hidden_dims(self, x, sample = True, concat = True):
-        z_loc_gs, z_scale_gs = self.encoder_gs(x[:,:,self.idx_gs])
-        z_loc_uns, z_scale_uns = self.encoder_uns(x[0,:,:].squeeze())
+
+        if self.z_dim_gs > 0:
+            z_loc_gs, z_scale_gs = self.encoder_gs(x[:,:,self.idx_gs])
+        if self.z_dim_uns > 0:
+            z_loc_uns, z_scale_uns = self.encoder_uns(x[0,:,:].squeeze())
 
         if sample:
             # sample in latent space
@@ -217,12 +226,14 @@ class VAE(nn.Module):
                    
         else:
             #return MAP
-            z1 = z_loc_gs
+            if self.z_dim_gs > 0:
+                z1 = z_loc_gs
             if self.num_iafs > 0:
                 for i in range(len(self.iafs_modules2)):
                     z1 = self.iafs_modules2[i](z1)
                 
-            z2 = z_loc_uns
+            if self.z_dim_uns > 0:
+                z2 = z_loc_uns
             if self.num_iafs > 0:
                 for i in range(len(self.iafs_modules)):
                     z2 = self.iafs_modules[i](z2)
