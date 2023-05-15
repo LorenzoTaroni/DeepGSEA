@@ -46,8 +46,6 @@ def fit_SVGSA(adata, gene_dict, lr = 0.001, seed = 3, CUDA = False, epochs = 10,
         mask = mask = torch.ones([adata.shape[1], N_GS])
 
 
-    print(mask.shape)
-
     # Model initialization
     
     vae = VAE(mask = mask.t(), input_dim = mask.shape[0],
@@ -65,8 +63,6 @@ def fit_SVGSA(adata, gene_dict, lr = 0.001, seed = 3, CUDA = False, epochs = 10,
     # Input initialization
 
     input = SingleCellDataset(adata, N_GS, normalize = normalize)
-
-    print(input.shape)
 
     input_dataloader = DataLoader(input, batch_size=batch_size, shuffle=True, generator=generator)
 
