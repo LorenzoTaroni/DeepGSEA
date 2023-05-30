@@ -68,16 +68,14 @@ class VAE(nn.Module):
                 z_loc_gs = x.new_zeros(torch.Size((x.shape[1], self.z_dim_gs))) 
                 z_scale_gs = x.new_ones(torch.Size((x.shape[1], self.z_dim_gs))) 
 
-                z_loc_gs = pyro.sample("z_loc_gs", dist.Delta(z_loc_gs, event_dim=1))
-                z_scale_gs = pyro.sample("z_scale_gs", dist.Delta(z_scale_gs, event_dim=1))
+                z_loc_gs, z_scale_gs = self.encoder_gs(x[:,:,self.idx_gs])
         
             # setup hyperparameters for prior p(z)
             if self.z_dim_uns > 0 :
                 z_loc_uns = x.new_zeros(torch.Size((x.shape[1], self.z_dim_uns)))
                 z_scale_uns = x.new_ones(torch.Size((x.shape[1], self.z_dim_uns))) 
 
-                z_loc_uns = pyro.sample("z_loc_uns", dist.Delta(z_loc_uns, event_dim=1))
-                z_scale_uns = pyro.sample("z_scale_uns", dist.Delta(z_scale_uns, event_dim=1))
+                z_loc_uns, z_scale_uns = self.encoder_uns(x[0,:,:].squeeze())
         
             #z1 = pyro.sample("latent_gs", dist.Normal(z_loc_gs, z_scale_gs).to_event(1))
             if self.num_iafs > 0:
@@ -133,14 +131,8 @@ class VAE(nn.Module):
             if self.z_dim_gs > 0:
                 z_loc_gs, z_scale_gs = self.encoder_gs(x[:,:,self.idx_gs])
 
-                z_loc_gs = pyro.sample("z_loc_gs", dist.Delta(z_loc_gs, event_dim=1))
-                z_scale_gs = pyro.sample("z_scale_gs", dist.Delta(z_scale_gs, event_dim=1))
-
             if self.z_dim_uns > 0 :
                 z_loc_uns, z_scale_uns = self.encoder_uns(x[0,:,:].squeeze())
-
-                z_loc_uns = pyro.sample("z_loc_uns", dist.Delta(z_loc_uns, event_dim=1))
-                z_scale_uns = pyro.sample("z_scale_uns", dist.Delta(z_scale_uns, event_dim=1))
 
             
             if self.num_iafs > 0:
