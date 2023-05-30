@@ -92,7 +92,7 @@ def fit_SVGSA(adata, gene_dict, lr = 0.001, seed = 3, CUDA = False, epochs = 10,
                 x = x.cuda()
             # do ELBO gradient and accumulate loss
             epoch_loss += svi.step(x.transpose(1,0))
-        losses.append(epoch_loss / batch_size)
+        losses.append(epoch_loss) # / batch_size)
         t.set_description("Epoch loss %f" % epoch_loss)
         t.refresh()
         

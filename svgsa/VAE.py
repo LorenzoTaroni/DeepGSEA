@@ -113,7 +113,7 @@ class VAE(nn.Module):
 
             # using mean instead of sum would make the loss not sensitive to the batch size
 
-            pyro.factor("loss", lk.sum() + penalty)
+            pyro.factor("loss", torch.mean(lk) - penalty*0.000001)
          
 
     # define the guide (i.e. variational distribution) q(z|x)
