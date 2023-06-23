@@ -44,7 +44,7 @@ def fit_SVGSA(adata, gene_dict, lr = 0.001, seed = 3, CUDA = False, epochs = 10,
         
     else:
 
-        mask = mask = torch.ones([adata.shape[1], N_GS])
+        mask = torch.ones([adata.shape[1], N_GS])
 
 
     # Model initialization

@@ -65,29 +65,36 @@ class VAE(nn.Module):
             
             # setup hyperparameters for prior p(z)
             if self.z_dim_gs > 0 :
-                z_loc_gs = x.new_zeros(torch.Size((x.shape[1], self.z_dim_gs))) 
-                z_scale_gs = x.new_ones(torch.Size((x.shape[1], self.z_dim_gs))) 
+                z_loc_gs_init = x.new_zeros(torch.Size((x.shape[1], self.z_dim_gs))) 
+                z_scale_gs_init = x.new_ones(torch.Size((x.shape[1], self.z_dim_gs))) 
 
-                z_loc_gs, z_scale_gs = self.encoder_gs(x[:,:,self.idx_gs])
+                #z_loc_gs, z_scale_gs = self.encoder_gs(x[:,:,self.idx_gs])
+
+                z_loc_gs_prior = pyro.sample("z_loc_gs", dist.Normal(z_loc_gs_init, x.new_ones(torch.Size((x.shape[1], self.z_dim_gs))) ).to_event(1) )
+                z_scale_gs_prior = pyro.sample("z_scale_gs", dist.InverseGamma(z_scale_gs_init, 2 * x.new_ones(torch.Size((x.shape[1], self.z_dim_gs))) ).to_event(1) )
         
             # setup hyperparameters for prior p(z)
             if self.z_dim_uns > 0 :
-                z_loc_uns = x.new_zeros(torch.Size((x.shape[1], self.z_dim_uns)))
-                z_scale_uns = x.new_ones(torch.Size((x.shape[1], self.z_dim_uns))) 
+                z_loc_uns_init = x.new_zeros(torch.Size((x.shape[1], self.z_dim_uns)))
+                z_scale_uns_init = x.new_ones(torch.Size((x.shape[1], self.z_dim_uns))) 
 
-                z_loc_uns, z_scale_uns = self.encoder_uns(x[0,:,:].squeeze())
+                #z_loc_uns, z_scale_uns = self.encoder_uns(x[0,:,:].squeeze())
+
+                z_loc_uns_prior = pyro.sample("z_loc_uns", dist.Normal(z_loc_uns_init, x.new_ones(torch.Size((x.shape[1], self.z_dim_uns))) ).to_event(1) )
+                z_scale_uns_prior = pyro.sample("z_scale_uns", dist.InverseGamma(z_scale_uns_init, 2 * x.new_ones(torch.Size((x.shape[1], self.z_dim_uns)))).to_event(1) )                
+                
         
             #z1 = pyro.sample("latent_gs", dist.Normal(z_loc_gs, z_scale_gs).to_event(1))
             if self.num_iafs > 0:
                 if self.z_dim_gs > 0 : 
-                    z1 = pyro.sample("latent_gs",dist.TransformedDistribution(dist.Normal(z_loc_gs, z_scale_gs), self.iafs2))
+                    z1 = pyro.sample("latent_gs",dist.TransformedDistribution(dist.Normal(z_loc_gs_prior, z_scale_gs_prior), self.iafs2))
                 if self.z_dim_uns > 0 : 
-                    z2 = pyro.sample("latent_uns",dist.TransformedDistribution(dist.Normal(z_loc_uns, z_scale_uns), self.iafs))
+                    z2 = pyro.sample("latent_uns",dist.TransformedDistribution(dist.Normal(z_loc_uns_prior, z_scale_uns_prior), self.iafs))
             else:
                 if self.z_dim_gs > 0 : 
-                    z1 = pyro.sample("latent_gs",dist.Normal(z_loc_gs, z_scale_gs).to_event(1) )
+                    z1 = pyro.sample("latent_gs",dist.Normal(z_loc_gs_prior, z_scale_gs_prior).to_event(1) )
                 if self.z_dim_uns > 0 : 
-                    z2 = pyro.sample("latent_uns",dist.Normal(z_loc_uns, z_scale_uns).to_event(1) )
+                    z2 = pyro.sample("latent_uns",dist.Normal(z_loc_uns_prior, z_scale_uns_prior).to_event(1) )
 
             #print(z2.shape)
             
@@ -104,14 +111,14 @@ class VAE(nn.Module):
             
             #penalty = kl_div(z1,z2, reduction = "batchmean")
             if self.z_dim_uns > 0 and self.z_dim_gs > 0:
-                penalty = self.kl_regularization(z_loc_gs, z_loc_uns, z_scale_gs, z_scale_uns)
+                penalty = self.kl_regularization(z_loc_gs_prior, z_loc_uns_prior, z_scale_gs_prior, z_scale_uns_prior)
             else:
                 penalty = 0
             
 
             # using mean instead of sum would make the loss not sensitive to the batch size
 
-            pyro.factor("loss", torch.mean(lk) - penalty*0.000001)
+            pyro.factor("loss", torch.mean(lk) + penalty)
          
 
     # define the guide (i.e. variational distribution) q(z|x)
@@ -131,20 +138,26 @@ class VAE(nn.Module):
             if self.z_dim_gs > 0:
                 z_loc_gs, z_scale_gs = self.encoder_gs(x[:,:,self.idx_gs])
 
+                z_loc_gs_prior = pyro.sample("z_loc_gs", dist.Delta(z_loc_gs, event_dim=1))
+                z_scale_gs_prior = pyro.sample("z_scale_gs", dist.Delta(z_scale_gs, event_dim=1))
+
             if self.z_dim_uns > 0 :
                 z_loc_uns, z_scale_uns = self.encoder_uns(x[0,:,:].squeeze())
+
+                z_loc_uns_prior = pyro.sample("z_loc_uns", dist.Delta(z_loc_uns, event_dim=1))
+                z_scale_uns_prior = pyro.sample("z_scale_uns", dist.Delta(z_scale_uns, event_dim=1))
 
             
             if self.num_iafs > 0:
                 if self.z_dim_gs > 0 : 
-                    z1 = pyro.sample("latent_gs",dist.TransformedDistribution(dist.Normal(z_loc_gs, z_scale_gs), self.iafs2))
+                    z1 = pyro.sample("latent_gs",dist.TransformedDistribution(dist.Normal(z_loc_gs_prior, z_scale_gs_prior), self.iafs2))
                 if self.z_dim_uns > 0 : 
-                    z2 = pyro.sample("latent_uns",dist.TransformedDistribution(dist.Normal(z_loc_uns, z_scale_uns), self.iafs))
+                    z2 = pyro.sample("latent_uns",dist.TransformedDistribution(dist.Normal(z_loc_uns_prior, z_scale_uns_prior), self.iafs))
             else:
                 if self.z_dim_gs > 0 : 
-                    z1 = pyro.sample("latent_gs",dist.Normal(z_loc_gs, z_scale_gs).to_event(1) )
+                    z1 = pyro.sample("latent_gs",dist.Normal(z_loc_gs_prior, z_scale_gs_prior).to_event(1) )
                 if self.z_dim_uns > 0 : 
-                    z2 = pyro.sample("latent_uns",dist.Normal(z_loc_uns, z_scale_uns).to_event(1) )
+                    z2 = pyro.sample("latent_uns",dist.Normal(z_loc_uns_prior, z_scale_uns_prior).to_event(1) )
 
 
     # define a helper function for enforcing separation
