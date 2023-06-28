@@ -16,10 +16,10 @@ def fit_SVGSA(adata, gene_dict, lr = 0.001, seed = 3, CUDA = False, epochs = 10,
     pyro.clear_param_store() 
 
     if CUDA:
-        torch.set_default_tensor_type('torch.cuda.DoubleTensor')
+        torch.set_default_tensor_type('torch.cuda.FloatTensor')
         generator = torch.Generator(device='cuda')
     else:
-        torch.set_default_tensor_type('torch.DoubleTensor')
+        torch.set_default_tensor_type('torch.FloatTensor')
         generator = torch.Generator()
 
     if compile_JIT:
