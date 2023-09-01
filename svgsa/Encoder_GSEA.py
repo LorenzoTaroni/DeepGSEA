@@ -34,17 +34,17 @@ class Encoder_GSEA(nn.Module):
         
         
 
-    def forward(self, x):
+    def forward(self, x, return_geneset = False):
                 
         # define the forward computation on the sample x
         
         hidden1 = self.relu(self.bc1(self.fc1(x))).transpose(1,0)
         hidden2 = self.relu(self.bc2(self.fc2(hidden1))).transpose(1,0)
         hidden3 = self.relu(self.bc3(self.fc3(hidden2))).transpose(1,0)
-        hidden4 = self.relu(self.bc4(self.fc4(hidden3))).transpose(1,0)
+        hidden4 = self.bc4(self.fc4(hidden3)).squeeze()
 
-        hidden4 = hidden4.reshape(-1, self._channels)
-        
+        if return_geneset:
+            return self.bc4(self.fc4(hidden3)).squeeze()
 
         # then return a mean vector and a (positive) square root covariance
         # each of size batch_size x z_dim

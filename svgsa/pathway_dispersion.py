@@ -5,7 +5,7 @@ from sklearn.preprocessing import scale
 
 def select_highest_variance_gs(X, gs, N, gene_names, normalize = True):
     if normalize:
-        Z = scale(np.log1p(X.toarray().transpose() / X.toarray().sum(axis=1) * 10 ** 6), axis=1, with_mean=True,
+        Z = scale(np.log1p(X.transpose() / X.sum(axis=1) * 10 ** 6), axis=1, with_mean=True,
                   with_std=False, copy=True)
     else:
         Z = X.transpose()

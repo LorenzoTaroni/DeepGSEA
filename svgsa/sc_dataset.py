@@ -7,10 +7,13 @@ from sklearn.preprocessing import scale
 class SingleCellDataset(Dataset):
     def __init__(self, adata, n_gs, normalize = True):
         if normalize:
-            self.raw = np.clip(scale(adata.obsm["raw"].toarray() / adata.obsm["raw"].toarray().sum(axis=1).reshape([-1,1]) * 10**6).astype(np.float32), -10,10)
+            self.data = np.clip(scale(adata.X / adata.X.sum(axis=1).reshape([-1,1]) * 10**6).astype(np.float32), -10,10)
+            self.raw = adata.X
+            self.raw_counts = torch.tensor(self.raw).unsqueeze(0).repeat(n_gs, 1, 1)
         else:
-            self.raw = np.clip(adata.obsm["raw"].astype(np.float32), -10,10)
-        self.counts = torch.tensor(self.raw).unsqueeze(0).repeat(n_gs, 1, 1)
+            self.data = np.clip(adata.X.astype(np.float32), -10,10)
+            self.raw = adata.raw
+        self.counts = torch.tensor(self.data).unsqueeze(0).repeat(n_gs, 1, 1)
         self.genes = adata.var_names
         self.cells = adata.obs_names
         self.n_genes = adata.n_vars

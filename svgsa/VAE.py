@@ -55,8 +55,10 @@ class VAE(nn.Module):
     def model(self, x):
         # register PyTorch module `decoder` with Pyro
         pyro.module("decoder", self.decoder)
-        pyro.module("iafs_modules", self.iafs_modules)
-        pyro.module("iafs_modules2", self.iafs_modules2)
+
+        if self.num_iafs > 0:
+            pyro.module("iafs_modules", self.iafs_modules)
+            pyro.module("iafs_modules2", self.iafs_modules2)
         
 
         # sample from prior (value will be sampled by guide when computing the ELBO)
@@ -113,12 +115,15 @@ class VAE(nn.Module):
             if self.z_dim_uns > 0 and self.z_dim_gs > 0:
                 penalty = self.kl_regularization(z_loc_gs_prior, z_loc_uns_prior, z_scale_gs_prior, z_scale_uns_prior)
             else:
-                penalty = 0
+                penalty = torch.tensor([0])
             
 
             # using mean instead of sum would make the loss not sensitive to the batch size
 
-            pyro.factor("loss", torch.sum(lk) + penalty)
+            if self.z_dim_uns > 0 and self.z_dim_gs > 0:
+                pyro.factor("loss", torch.sum(lk) - torch.sum(1/penalty)*10000)
+            else:
+                pyro.factor("loss", torch.sum(lk))
             #pyro.factor("loss", torch.mean(lk) * x.shape[1] + penalty)
 
     # define the guide (i.e. variational distribution) q(z|x)
@@ -190,11 +195,12 @@ class VAE(nn.Module):
 
         for i in range(len(z_loc_gs[1,:])):
             for j in range(len(z_loc_uns[1,:])):
-                kl1 = torch.mean((  torch.log(z_scale_gs[:,i]) - torch.log(z_scale_uns[:,j])  )  +  (  (z_scale_uns[:,j]**2) + (z_loc_uns[:,j] - z_loc_gs[:,i])**2  ) / (  2 * z_scale_gs[:,i]**2  )   -   0.5)
-                kl2 = torch.mean((  torch.log(z_scale_uns[:,j]) - torch.log(z_scale_gs[:,i])  )  +  (  (z_scale_gs[:,i]**2) + (z_loc_gs[:,i] - z_loc_uns[:,j])**2  ) / (  2 * z_scale_uns[:,j]**2  )   -   0.5)
+                kl1 = (  torch.log(z_scale_gs[:,i]) - torch.log(z_scale_uns[:,j])  )  +  (  (z_scale_uns[:,j]**2) + (z_loc_uns[:,j] - z_loc_gs[:,i])**2  ) / (  2 * z_scale_gs[:,i]**2  )   -   0.5
+                kl2 = (  torch.log(z_scale_uns[:,j]) - torch.log(z_scale_gs[:,i])  )  +  (  (z_scale_gs[:,i]**2) + (z_loc_gs[:,i] - z_loc_uns[:,j])**2  ) / (  2 * z_scale_uns[:,j]**2  )   -   0.5
                 totpen.append((kl1+kl2)/2)
 
-        pen = torch.mean(torch.as_tensor(totpen))
+        totpen = torch.stack(totpen) 
+        pen = torch.mean(totpen, dim = 0)
 
         return pen
 
@@ -206,7 +212,14 @@ class VAE(nn.Module):
         cell_values, loc = self.decoder(z)
         
         return cell_values
-   
+    
+    def return_gs(self, x, return_geneset = False):
+
+        score = self.encoder_gs(x[:,:,self.idx_gs], return_geneset)
+
+        print("score: ", score)
+
+        return score
 
     # define a helper function for reconstructing cells
     def sample_hidden_dims(self, x, sample = True, concat = True):

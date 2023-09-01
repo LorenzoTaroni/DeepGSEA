@@ -30,4 +30,4 @@ class LinearWithChannel(nn.Module):
             self.weight.data = self.weight.data * self._mask
             #self.weight.mul_(self._mask)
             
-        return (torch.bmm(x, self.weight) + self.bias).reshape([-1, self.weight.shape[0], self.weight.shape[2]])
+        return (torch.bmm(x, self.weight) + self.bias).transpose(1,0)
