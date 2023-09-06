@@ -9,7 +9,7 @@ from tqdm import trange
 
 from matplotlib.pyplot import rc_context
 
-import progeny
+import decoupler as dc
 
 import svgsa
 
@@ -39,12 +39,9 @@ for perm in all_permutations:
 
     #adata.obsm["raw"] = adata.raw.X.toarray().astype(np.float32)
 
-    gsts = progeny.load_model(
-                              organism = 'Human', 
-                              top = 500 # Number of top significant target genes per pathway to use
-                              )
+    pgy = dc.get_progeny(organism = "human", top = 500)
     
-    gsts_dict = gsts.apply(lambda x: gsts.index[np.abs(x) > 0.].tolist()).to_dict("list")
+    gsts_dict = pgy.groupby("source")["target"].apply(lambda x: sorted(x)).to_dict()
 
     pyro.enable_validation()
     #torch.autograd.set_detect_anomaly(True)
