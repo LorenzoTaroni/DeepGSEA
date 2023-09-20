@@ -10,7 +10,7 @@ import numpy as np
 
 from svgsa.VAE import VAE
 
-def fit_SVGSA(adata, gene_dict, lr = 0.001, seed = 3, CUDA = False, epochs = 10, z_dim_gs = 10, z_dim_uns = 15, decoder_dims = [64,128,256], encoder_dims_uns = [256,128,64], encoder_dims_gs = [256,128,64], N_GS = 20, fixed = False, batch_size = 16, compile_JIT = False, normalize = True, num_iafs = 0, iaf_dim = 40, mask_gs = None):
+def fit_SVGSA(adata, gene_dict, lr = 1e-2, seed = 3, CUDA = False, epochs = 10, z_dim_gs = 10, z_dim_uns = 15, decoder_dims = [64,128,256], encoder_dims_uns = [256,128,64], encoder_dims_gs = [256,128,64], N_GS = 20, fixed = False, batch_size = 16, compile_JIT = False, normalize = True, num_iafs = 0, iaf_dim = 40, mask_gs = None):
 
     pyro.set_rng_seed(seed)
     
@@ -92,14 +92,14 @@ def fit_SVGSA(adata, gene_dict, lr = 0.001, seed = 3, CUDA = False, epochs = 10,
 
 
     svi = pyro.infer.SVI(model=model,
-                     guide=guide,
-                     optim=pyro.optim.ClippedAdam({"lr": lr}),
-                     loss= loss())
+                         guide=guide,
+                         optim=pyro.optim.ClippedAdam({"lr": lr, "lrd": np.exp(np.log10(1e-5/lr)/epochs)}),
+                         loss= loss())
+
     t = trange(epochs, desc='Bar desc', leave=True)
-    
-    
-    
+
     losses = []
+    lrs = []
     
     for epoch in t:
         
@@ -113,7 +113,10 @@ def fit_SVGSA(adata, gene_dict, lr = 0.001, seed = 3, CUDA = False, epochs = 10,
                 x = x.cuda()
             # do ELBO gradient and accumulate loss
             epoch_loss += svi.step(x.transpose(1,0)) / batch_size
+            current_lr = svi.optim.get_state()['encoder_gs$$$bc1.weight']['param_groups'][0]['lr']
+
         losses.append(epoch_loss)
+        lrs.append(current_lr)
         t.set_description("Epoch loss %f" % epoch_loss)
         t.refresh()
         
