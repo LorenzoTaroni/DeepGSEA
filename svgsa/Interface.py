@@ -149,4 +149,4 @@ def fit_SVGSA(adata, gene_dict, lr = 1e-2, seed = 3, CUDA = False, epochs = 10, 
     adata.obsm["X_svgsa_gs"] = adata.obsm["X_svgsa"][:, 0:z_dim_gs]
     adata.obsm["X_svgsa_uns"] = adata.obsm["X_svgsa"][:, z_dim_gs:(z_dim_gs + z_dim_uns + 1)]
     
-    return adata, svi, losses, vr
+    return adata, svi, losses, lrs, vr
