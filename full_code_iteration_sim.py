@@ -41,9 +41,9 @@ for perm in all_permutations:
         continue
 
     if ngs == 5:
-        expr = torch.tensor([20.0, 15.0, 10.0, 5.0, 2.0])
+        expr = torch.tensor([20.0, 15.0, 10.0, 5.0, 2.0]).cpu()
     else:
-        expr = torch.tensor([45.0, 40.0, 35.0, 30.0, 25.0, 20.0, 15.0, 10.0, 5.0, 2.0])
+        expr = torch.tensor([45.0, 40.0, 35.0, 30.0, 25.0, 20.0, 15.0, 10.0, 5.0, 2.0]).cpu()
 
     for seed in seeds:
 
