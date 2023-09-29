@@ -14,7 +14,7 @@ def load_pbmc68k_reduced(data_name=False):
 
 
 def sim_mask(ngenes,ngs):
-    mask_gs = torch.zeros(ngenes,ngs)
+    mask_gs = torch.zeros(ngenes,ngs).cpu()
     step = np.int_(ngenes/ngs)
     for i in range(ngs):
         mask_gs[i*step:i*step+step,i] = 1
@@ -23,7 +23,7 @@ def sim_mask(ngenes,ngs):
 def sim_data(ncells,ngenes,ngs,mask_gs,expr,seed):
     
     torch.manual_seed(seed)
-    data = torch._standard_gamma(torch.ones(ncells,ngenes)*1.5)
+    data = torch._standard_gamma(torch.ones(ncells,ngenes)*1.5).cpu()
     mask = mask_gs*expr
     mask[mask_gs.bool()] = torch.normal(mask[mask_gs.bool()], std=0.001)
     weight = mask.clone()

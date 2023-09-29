@@ -65,7 +65,7 @@ def umap_embedding(adata, rep, expression_list, color_label = "bulk_labels", nco
 
 
 
-def full_plot(adata, rep, expression_list, color_label = "bulk_labels", vmin=-2, vmax=2, palette=sns.color_palette("tab10"), save_directory=None):   #sc_palette
+def full_plot(adata, rep, expression_list, color_label = "bulk_labels", vmin=-2, vmax=2, palette=sns.color_palette("tab10"), save_directory=None, seed = None):   #sc_palette
     
     names = expression_list + [color_label]
     n = np.int(np.ceil(np.sqrt(len(names)+1)))
@@ -235,5 +235,7 @@ def full_plot(adata, rep, expression_list, color_label = "bulk_labels", vmin=-2,
                     # If there are no more names, remove the empty axes
                     subfigsnestR[1].delaxes(ax)
 
-
-    plt.savefig(os.path.join(path,'full_plot.png'), bbox_inches="tight")
+    if seed is not None:
+        plt.savefig(os.path.join(path,f'seed={seed}_full_plot.png'), bbox_inches="tight")
+    else:
+        plt.savefig(os.path.join(path,'full_plot.pdf'), bbox_inches="tight")
