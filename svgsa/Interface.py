@@ -10,7 +10,7 @@ import numpy as np
 
 from svgsa.VAE import VAE
 
-def fit_SVGSA(adata, gene_dict, lr = 1e-2, seed = 3, CUDA = False, epochs = 10, z_dim_gs = 10, z_dim_uns = 15, decoder_dims = [64,128,256], encoder_dims_uns = [256,128,64], encoder_dims_gs = [256,128,64], N_GS = 20, fixed = False, batch_size = 16, compile_JIT = False, normalize = True, num_iafs = 0, iaf_dim = 40, mask_gs = None):
+def fit_SVGSA(adata, gene_dict, lr = 5*1e-3, seed = 3, CUDA = False, epochs = 10, z_dim_gs = 10, z_dim_uns = 15, decoder_dims = [64,128,256], encoder_dims_uns = [256,128,64], encoder_dims_gs = [256,128,64], N_GS = 20, fixed = False, batch_size = 16, compile_JIT = False, normalize = True, num_iafs = 0, iaf_dim = 40, mask_gs = None):
 
     pyro.set_rng_seed(seed)
     
