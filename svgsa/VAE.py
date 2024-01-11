@@ -13,7 +13,7 @@ from torch.nn.functional import kl_div
 
 class VAE(nn.Module):
 
-    def __init__(self,mask,input_dim, z_dim_gs, z_dim_uns ,hidden_dims_dec, hidden_dims_enc_gs, hidden_dims_enc_uns, use_cuda = False, n_gs=30, batch_size = 128, num_iafs = 5, iaf_dim = 40):
+    def __init__(self,mask,input_dim, z_dim_gs, z_dim_uns ,hidden_dims_dec, hidden_dims_enc_gs, hidden_dims_enc_uns, beta, use_cuda = False, n_gs=30, batch_size = 128, num_iafs = 5, iaf_dim = 40):
         super().__init__()
         
         self.idx_gs = mask.sum(dim=0) > 0
@@ -28,7 +28,7 @@ class VAE(nn.Module):
         self.decoder = Decoder(input_dim, z_dim_gs + z_dim_uns, hidden_dims_dec)
         
         self.mask = mask
-       
+        self.beta = beta
         
         if use_cuda:
             # calling cuda() here will put all the parameters of
@@ -121,7 +121,7 @@ class VAE(nn.Module):
             # using mean instead of sum would make the loss not sensitive to the batch size
 
             if self.z_dim_uns > 0 and self.z_dim_gs > 0:
-                pyro.factor("loss", torch.sum(lk) - torch.sum(1/penalty)*10000)
+                pyro.factor("loss", torch.sum(lk) - self.beta*torch.sum(1/penalty))
             else:
                 pyro.factor("loss", torch.sum(lk))
             #pyro.factor("loss", torch.mean(lk) * x.shape[1] + penalty)

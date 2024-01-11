@@ -23,7 +23,7 @@ ngenes = 300
 ncells = [1000, 5000, 10000]
 ngs = [5, 10]
 seeds = [11, 29, 47, 71, 97, 113, 149, 173, 197, 229]
-z_dim_gs = [0, 2, 5, 10, 50, 100]
+z_dim_gs = [2, 5, 10, 50, 100]
 z_dim_uns = [0, 2, 5, 10, 50, 100]
 epochs = [100, 200, 500, 1000, 2000]
 batch_size = [100, 300, 700]
@@ -36,9 +36,6 @@ all_permutations = list(product(ncells, ngs, z_dim_gs, z_dim_uns, epochs, batch_
 for perm in all_permutations:
 
     ncells, ngs, z_dim_gs, z_dim_uns, epochs, batch_size = perm
-
-    if z_dim_gs == 0:
-        continue
 
     if ngs == 5:
         expr = torch.tensor([20.0, 15.0, 10.0, 5.0, 2.0]).cpu()

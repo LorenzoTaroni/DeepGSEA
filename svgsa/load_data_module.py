@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import torch
 import scanpy as sc
+import platform
+from collections import OrderedDict
 
 
 def load_pbmc68k_reduced(data_name=False):
@@ -11,7 +13,21 @@ def load_pbmc68k_reduced(data_name=False):
         return adata, name
     return adata
 
+def load_dataset(directory, data_name=True):
 
+    os_name = platform.system()
+    if os_name == 'Windows':
+        s = '\\'
+    elif os_name == 'Linux':
+        s = '/'
+    else:
+        print('Operating system not supported')
+
+    adata = sc.read(directory)
+    if data_name:
+        name = directory.split(s)[-1].split('.')[0]
+        return adata, name
+    return adata
 
 def sim_mask(ngenes,ngs):
     mask_gs = torch.zeros(ngenes,ngs).cpu()
@@ -57,9 +73,29 @@ def sim_data(ncells,ngenes,ngs,mask_gs,expr,seed):
 
     return adata, gsts
 
-def load_sim_data(ncells,ngenes,ngs,expr,seed,data_name=False):
+def load_sim_data(ncells,ngenes,ngs,expr,seed=42,data_name=False):
+    '''it returns
+        adata: AnnData object, that is a simulated dataset.
+        gsts: dictionary of gene sets activations.
+        name: string, name of the dataset.
+    '''
     adata, gsts = sim_data(ncells,ngenes,ngs,sim_mask(ngenes,ngs),expr,seed)
     if data_name:
         name = f"Simulated_nc{ncells}_ng{ngenes}_ngs{ngs}"
         return adata, gsts, name
     return adata, gsts
+
+def read_gmt(fname, sep='\t', min_g=0, max_g=5000):
+    """
+    Read GMT file into dictionary of pathway:genes.
+    min_g and max_g are optional gene set size filters.
+    """
+    dict_pathway = OrderedDict()
+    with open(fname) as f:
+        lines = f.readlines()
+        for line in lines:
+            line = line.strip()
+            val = line.split(sep)
+            if min_g <= len(val[2:]) <= max_g:
+                dict_pathway[val[0]] = val[2:]
+    return dict_pathway

@@ -19,7 +19,7 @@ from itertools import product
 
 plt.style.use('ggplot')
 
-z_dim_gs = [0, 2, 5, 10, 50, 100, 200]
+z_dim_gs = [2, 5, 10, 50, 100, 200]
 z_dim_uns = [0, 2, 5, 10, 50, 100, 200]
 epochs = [100, 200, 500, 1000, 2000]
 batch_size = [100, 300, 700]
@@ -30,9 +30,6 @@ all_permutations = list(product(z_dim_gs, z_dim_uns, epochs, batch_size))
 for perm in all_permutations:
 
     z_dim_gs, z_dim_uns, epochs, batch_size = perm
-
-    if z_dim_gs == 0:
-        continue
 
     adata, data_name = svgsa.load_pbmc68k_reduced(data_name=True)
 

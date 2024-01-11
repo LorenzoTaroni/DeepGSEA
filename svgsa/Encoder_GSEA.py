@@ -44,7 +44,7 @@ class Encoder_GSEA(nn.Module):
         hidden4 = self.bc4(self.fc4(hidden3)).squeeze()
 
         if return_geneset:
-            return self.bc4(self.fc4(hidden3)).squeeze()
+            return hidden4
 
         # then return a mean vector and a (positive) square root covariance
         # each of size batch_size x z_dim
