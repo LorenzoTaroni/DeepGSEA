@@ -20,9 +20,9 @@ def save_plot(file_name, save_directory):
     plt.savefig(os.path.join(path,file_name+'.png'), bbox_inches="tight")
 
 
-def decoupler_comparison(N_GS_list, adata, net, source='source', target='target', weight='weight', method_list=None, save_directory=None):
+def decoupler_comparison(N_GS_list, adata, net, source='source', target='target', weight='weight', use_raw=True, method_list=None, save_directory=None):
 
-    dc.decouple(mat=adata,net=net,source=source,target=target,weight=weight, methods=method_list)
+    dc.decouple(mat=adata,net=net,source=source,target=target,weight=weight, methods=method_list, use_raw=use_raw)
 
     # Make a list of formatted method names
     estimate_list = []
@@ -41,7 +41,7 @@ def decoupler_comparison(N_GS_list, adata, net, source='source', target='target'
         #adata_new.obsm["mlm_estimate"][adata_new.obsm["mlm_estimate"].keys()[i]]
         # Iterate over each value of i and create a scatter plot
         for j, ax in enumerate(axs):
-            sns.scatterplot(x=adata.obsm[method][N_GS_list[j]], y=adata.obsm["last_node"][:, j],
+            sns.scatterplot(x=adata.obsm[method][N_GS_list[j]], y=adata.obsm["last_node"][N_GS_list[j]],
                             hue=adata.obs[N_GS_list[j]], palette="viridis", ax=ax, legend=False) #, palette=f"tab{palette_value}"
             
             #g.legend(loc='upper right', bbox_to_anchor=(1.2, 1.0), ncol=1)
@@ -79,10 +79,13 @@ def plot_learning_rate_decay(lrs, save_directory=None):
 
 def umap_embedding(adata, rep, expression_list, color_label = "bulk_labels", ncols=4, vmin=-2, vmax=2, palette=None, save_directory=None):   #sc_palette
 
+    # umap hyperparameters
     random_state=42
     n_neighbors=15
+    min_dist=0.5
+    
     sc.pp.neighbors(adata, use_rep = rep, n_neighbors=n_neighbors)
-    sc.tl.umap(adata, min_dist=0.5, random_state=random_state)
+    sc.tl.umap(adata, min_dist=min_dist, random_state=random_state)
     with rc_context({'figure.figsize': (3, 3)}):
         if palette:
             sc.pl.umap(adata, color=expression_list + [color_label], s=50, frameon=False, ncols=ncols, vmin=vmin, vmax=vmax, palette=palette, show=False)
@@ -95,7 +98,10 @@ def umap_full_plot(adata, rep, expression_list, color_label = "bulk_labels", dot
     
     names = expression_list + [color_label]
     n = np.int(np.ceil(np.sqrt(len(names)+1)))
-    n_neighbors=15
+
+    # umap hyperparameters
+    n_neighbors=50
+    min_dist=0.6
     random_state=42
 
     fig = plt.figure(layout='constrained', figsize=(20, 16))
@@ -117,7 +123,7 @@ def umap_full_plot(adata, rep, expression_list, color_label = "bulk_labels", dot
         axsnestX = subfigsnestL[0].subplots(n, n)
 
         sc.pp.neighbors(adata, use_rep = "X", n_neighbors=n_neighbors)
-        sc.tl.umap(adata, min_dist=0.5, random_state=random_state)
+        sc.tl.umap(adata, min_dist=min_dist, random_state=random_state)
 
         for i, axs in enumerate(axsnestX):
             for j, ax in enumerate(axs):
@@ -153,7 +159,7 @@ def umap_full_plot(adata, rep, expression_list, color_label = "bulk_labels", dot
         axsnestX_svgsa = subfigsnestL[1].subplots(n, n)
 
         sc.pp.neighbors(adata, use_rep = "X_svgsa", n_neighbors=n_neighbors)
-        sc.tl.umap(adata, min_dist=0.5, random_state=random_state)
+        sc.tl.umap(adata, min_dist=min_dist, random_state=random_state)
 
         for i, axs in enumerate(axsnestX_svgsa):
             for j, ax in enumerate(axs):
@@ -191,7 +197,7 @@ def umap_full_plot(adata, rep, expression_list, color_label = "bulk_labels", dot
         axsnestGS = subfigsnestR[0].subplots(n, n)
 
         sc.pp.neighbors(adata, use_rep = "X_svgsa_gs", n_neighbors=n_neighbors)
-        sc.tl.umap(adata, min_dist=0.5, random_state=random_state)
+        sc.tl.umap(adata, min_dist=min_dist, random_state=random_state)
 
         for i, axs in enumerate(axsnestGS):
             for j, ax in enumerate(axs):
@@ -226,7 +232,7 @@ def umap_full_plot(adata, rep, expression_list, color_label = "bulk_labels", dot
         axsnestUNS = subfigsnestR[1].subplots(n, n)
 
         sc.pp.neighbors(adata, use_rep = "X_svgsa_uns", n_neighbors=n_neighbors)
-        sc.tl.umap(adata, min_dist=0.5, random_state=random_state)
+        sc.tl.umap(adata, min_dist=min_dist, random_state=random_state)
 
         for i, axs in enumerate(axsnestUNS):
             for j, ax in enumerate(axs):

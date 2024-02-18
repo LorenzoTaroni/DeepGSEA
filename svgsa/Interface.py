@@ -10,7 +10,13 @@ import numpy as np
 
 from svgsa.VAE import VAE
 
-def fit_SVGSA(adata, gene_dict, lr = 5*1e-3, seed = 3, CUDA = False, epochs = 10, z_dim_gs = 10, z_dim_uns = 15, decoder_dims = [64,128,256], encoder_dims_uns = [256,128,64], encoder_dims_gs = [256,128,64], N_GS = 20, beta = 10000, fixed = False, batch_size = 16, compile_JIT = False, normalize = True, num_iafs = 0, iaf_dim = 40, gs_list=None):
+def fit_SVGSA(adata, gene_dict, lr = 5*1e-3, seed = 3, CUDA = False, epochs = 10, z_dim_gs = 10, z_dim_uns = 15, encoder_dims_gs = [16, 8, 4], encoder_dims_uns = [256,128,64], decoder_dims = None, N_GS = 20, beta = 10000, fixed = False, batch_size = 16, compile_JIT = False, normalize = True, num_iafs = 0, iaf_dim = 40, gs_list=None):
+
+    if decoder_dims is None:
+        if z_dim_uns > 0:
+            decoder_dims = encoder_dims_uns[::-1]
+        else:
+            decoder_dims = encoder_dims_gs[::-1]
 
     pyro.set_rng_seed(seed)
     
@@ -34,7 +40,7 @@ def fit_SVGSA(adata, gene_dict, lr = 5*1e-3, seed = 3, CUDA = False, epochs = 10
     
     if z_dim_gs > 0 and not fixed:
 
-        vr = select_highest_variance_gs(adata.X, gene_dict, N_GS, adata.var_names,normalize= normalize)
+        vr = list(select_highest_variance_gs(adata.X, gene_dict, N_GS, adata.var_names,normalize= normalize))
         idxs = [np.intersect1d(np.array(adata.var_names), np.array(gene_dict[k]), return_indices=True)[1] for k in vr]
         mask = torch.zeros([adata.shape[1], N_GS])
         for i in range(len(idxs)):
@@ -44,7 +50,7 @@ def fit_SVGSA(adata, gene_dict, lr = 5*1e-3, seed = 3, CUDA = False, epochs = 10
 
     elif fixed and gs_list is None:
 
-        vr = list(gene_dict.keys())
+        vr = list(gene_dict.keys())[:N_GS]
         idxs = [np.intersect1d(np.array(adata.var_names), np.array(gene_dict[k]), return_indices=True)[1] for k in vr]
         mask = torch.zeros([adata.shape[1], N_GS])
         for i in range(len(idxs)):
@@ -72,7 +78,7 @@ def fit_SVGSA(adata, gene_dict, lr = 5*1e-3, seed = 3, CUDA = False, epochs = 10
 
     # Model initialization
     
-    vae = VAE(mask = mask.t(), input_dim = mask.shape[0],
+    vae = VAE(mask = mask.t(), input_dim = adata.shape[1],
               z_dim_gs = z_dim_gs, z_dim_uns = z_dim_uns,
               hidden_dims_dec = decoder_dims, 
               hidden_dims_enc_gs = encoder_dims_gs, 
@@ -95,7 +101,7 @@ def fit_SVGSA(adata, gene_dict, lr = 5*1e-3, seed = 3, CUDA = False, epochs = 10
 
     svi = pyro.infer.SVI(model=model,
                          guide=guide,
-                         optim=pyro.optim.ClippedAdam({"lr": lr, "lrd": np.exp(np.log10(1e-5/lr)/epochs)}),
+                         optim=pyro.optim.ClippedAdam({"lr": lr, "lrd": np.exp(np.log10(1e-3/lr)/epochs)}),
                          loss= loss())
 
     t = trange(epochs, desc='Bar desc', leave=True)
@@ -151,4 +157,4 @@ def fit_SVGSA(adata, gene_dict, lr = 5*1e-3, seed = 3, CUDA = False, epochs = 10
     adata.obsm["X_svgsa_gs"] = adata.obsm["X_svgsa"][:, 0:z_dim_gs]
     adata.obsm["X_svgsa_uns"] = adata.obsm["X_svgsa"][:, z_dim_gs:(z_dim_gs + z_dim_uns + 1)]
     
-    return adata, svi, losses, lrs, list(vr)
+    return adata, svi, losses, lrs, vr
