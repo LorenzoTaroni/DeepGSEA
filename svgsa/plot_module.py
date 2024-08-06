@@ -97,7 +97,7 @@ def umap_embedding(adata, rep, expression_list, color_label = "bulk_labels", nco
 def umap_full_plot(adata, rep, expression_list, color_label = "bulk_labels", dot_size=50, palette=sns.color_palette("tab10"), save_directory=None, seed = None):   #sc_palette
     
     names = expression_list + [color_label]
-    n = np.int(np.ceil(np.sqrt(len(names)+1)))
+    n = int(np.ceil(np.sqrt(len(names)+1)))
 
     # umap hyperparameters
     n_neighbors=50
